@@ -46,6 +46,75 @@ grammar = """
 # BASIC EXPRESSIONS
 
 
+def parse_enum(tokens):
+    """
+    enum = "enum" identifier "{" [ identifier { ", " identifier } ] "}"
+    """
+
+    # check for enum keyword
+    token = tokens[0]
+    assert(token["tag"] == "enum"), f"Expected 'enum' at position {tokens[0]['position']}"
+
+    # check for identifier name
+    token = tokens[:1]
+    assert(token[0]["tag"] == "identifier"), f"Expected identifier name."
+    name = token[0]["value"] # name of the enum object
+
+    # check for opening curly brace
+    token = tokens[:1]
+    assert(token[0]["tag"] == "{"), f"Expected opening curly brace."
+    
+    # look for enumerators
+    enumerators = []
+    token = tokens[:1]
+    if (token[0]["tag"] != "}"):
+        assert(tokens[0]["tag"] == "identifier"), f"Expected identifier"
+        enumerators.append(tokens[0])
+        token = tokens[:1]
+
+        # check for multiple enumerators
+        while tokens[0]["tag"] == ",":
+            tokens = tokens[1:]
+            assert(tokens[0]["tag"] == "identifier"), f"Expected identifier"
+            enumerators.append(tokens[0])
+            token = tokens[1:]
+        
+        
+
+
+
+     
+    
+
+    """
+    tokens = tokens[1:]
+    assert tokens[0]["tag"] == "(", f"Expected '(' at position {tokens[0]['position']}"
+    tokens = tokens[1:]
+    parameters = []
+    if tokens[0]["tag"] != ")":
+        assert (
+            tokens[0]["tag"] == "identifier"
+        ), f"Expected identifier at position {tokens[0]['position']}"
+        parameters.append(tokens[0])
+        tokens = tokens[1:]
+        while tokens[0]["tag"] == ",":
+            tokens = tokens[1:]
+            assert (
+                tokens[0]["tag"] == "identifier"
+            ), f"Expected identifier at position {tokens[0]['position']}"
+            parameters.append(tokens[0])
+            tokens = tokens[1:]
+    assert tokens[0]["tag"] == ")", f"Expected ']' at position {tokens[0]['position']}"
+    tokens = tokens[1:]
+    body_statements, tokens = parse_statement_list(tokens)
+    return {
+        "tag": "function",
+        "parameters": parameters,
+        "body": body_statements,
+    }, tokens
+    """
+
+
 def parse_simple_expression(tokens):
     """
     simple_expression = identifier | <boolean> | <number> | <string> | <null> | list | object | ("-" simple_expression) | ("!" simple_expression) | function | ( "(" expression ")" )
