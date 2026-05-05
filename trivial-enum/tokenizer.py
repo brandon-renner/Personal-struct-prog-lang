@@ -23,6 +23,7 @@ patterns = [
     [r"or", "||"],  # alternate for ||
     [r"not", "!"],  # alternate for !
     [r"assert", "assert"],
+    [r"enum", "enum"],
     [r"[a-zA-Z_][a-zA-Z0-9_]*", "identifier"],  # identifiers
     [r"\+", "+"],
     [r"\-", "-"],
@@ -85,6 +86,8 @@ def tokenize(characters, generated_tags=test_generated_tags):
         token = {"tag": tag}
         value = match.group(0)
         if token["tag"] == "identifier":
+            token["value"] = value
+        if token["tag"] == "enum":
             token["value"] = value
         if token["tag"] == "string":
             token["value"] = value[1:-1].replace('""', '"')
@@ -280,6 +283,91 @@ def test_keywords():
         assert t[0]["tag"] == keyword, f"expected {keyword}, got {t[0]}"
         assert "value" not in t
 
+def test_enum():
+    print("testing enum keyword...")
+    t = tokenize("enum MyEnum { A, B, C }")
+    assert len(t) == 10, f"got tokens = {t}"
+
+    assert t[0]["tag"] == "enum", f"expected 'enum', got {t[0]}"
+    assert "value" in t[0], "Token for 'enum' should have a 'value' field."
+    assert t[0]["value"] == "enum"
+
+    assert t[1]["tag"] == "identifier", f"expected 'identifier', got {t[1]}"
+    assert "value" in t[1], "Token for 'identifier' should have a 'value' field."
+    assert t[1]["value"] == "MyEnum"
+
+    assert t[2]["tag"] == "{", f"expected '{{', got {t[2]}"
+    assert t[3]["tag"] == "identifier", f"expected 'identifier', got {t[3]}"
+    assert "value" in t[3], "Token for 'identifier' should have a 'value' field."
+    assert t[3]["value"] == "A"
+
+    assert t[4]["tag"] == ",", f"expected ',', got {t[4]}"
+    assert t[5]["tag"] == "identifier", f"expected 'identifier', got {t[5]}"
+    assert "value" in t[5], "Token for 'identifier' should have a 'value' field."
+    assert t[5]["value"] == "B"
+
+    assert t[6]["tag"] == ",", f"expected ',', got {t[6]}"
+    assert t[7]["tag"] == "identifier", f"expected 'identifier', got {t[7]}"
+    assert "value" in t[7], "Token for 'identifier' should have a 'value' field."
+    assert t[7]["value"] == "C"
+
+    assert t[8]["tag"] == "}", f"expected '}}', got {t[8]}"
+    assert t[9]["tag"] is None, f"expected end of tokens, got {t[9]}"
+
+    t = tokenize("enum Fruit { Apple, Banana, Orange, Grape, Mango }")
+    assert len(t) == 14, f"got tokens = {t}"
+
+    assert t[0]["tag"] == "enum", f"expected 'enum', got {t[0]}"
+    assert "value" in t[0], "Token for 'enum' should have a 'value' field."
+    assert t[0]["value"] == "enum"
+
+    assert t[1]["tag"] == "identifier", f"expected 'identifier', got {t[1]}"
+    assert "value" in t[1], "Token for 'identifier' should have a 'value' field."
+    assert t[1]["value"] == "Fruit"
+
+    assert t[2]["tag"] == "{", f"expected '{{', got {t[2]}"
+    assert t[3]["tag"] == "identifier", f"expected 'identifier', got {t[3]}"
+    assert "value" in t[3], "Token for 'identifier' should have a 'value' field."
+    assert t[3]["value"] == "Apple"
+
+    assert t[4]["tag"] == ",", f"expected ',', got {t[4]}"
+    assert t[5]["tag"] == "identifier", f"expected 'identifier', got {t[5]}"
+    assert "value" in t[5], "Token for 'identifier' should have a 'value' field."
+    assert t[5]["value"] == "Banana"
+
+    assert t[6]["tag"] == ",", f"expected ',', got {t[6]}"
+    assert t[7]["tag"] == "identifier", f"expected 'identifier', got {t[7]}"
+    assert "value" in t[7], "Token for 'identifier' should have a 'value' field."
+    assert t[7]["value"] == "Orange"
+
+    assert t[8]["tag"] == ",", f"expected ',', got {t[8]}"
+    assert t[9]["tag"] == "identifier", f"expected 'identifier', got {t[9]}"
+    assert "value" in t[9], "Token for 'identifier' should have a 'value' field."
+    assert t[9]["value"] == "Grape"
+
+    assert t[10]["tag"] == ",", f"expected ',', got {t[10]}"
+    assert t[11]["tag"] == "identifier", f"expected 'identifier', got {t[11]}"
+    assert "value" in t[11], "Token for 'identifier' should have a 'value' field."
+    assert t[11]["value"] == "Mango"
+
+    assert t[12]["tag"] == "}", f"expected '}}', got {t[12]}"
+    assert t[13]["tag"] is None, f"expected end of tokens, got {t[13]}"
+
+    t = tokenize("enum Empty { }")
+    assert len(t) == 5, f"got tokens = {t}"
+
+    assert t[0]["tag"] == "enum", f"expected 'enum', got {t[0]}"
+    assert "value" in t[0], "Token for 'enum' should have a 'value' field."
+    assert t[0]["value"] == "enum"
+
+    assert t[1]["tag"] == "identifier", f"expected 'identifier', got {t[1]}"
+    assert "value" in t[1], "Token for 'identifier' should have a 'value' field."
+    assert t[1]["value"] == "Empty"
+
+    assert t[2]["tag"] == "{", f"expected '{{', got {t[2]}"
+    assert t[3]["tag"] == "}", f"expected '}}', got {t[3]}"
+
+    assert t[4]["tag"] is None, f"expected end of tokens, got {t[4]}"
 
 def test_comments():
     print("testing comments...")
@@ -479,6 +567,7 @@ if __name__ == "__main__":
     test_comments()
     test_error()
     test_if_identifier_sequence()
+    test_enum()
     test_tag_coverage()
     test_line_and_column_tracking()
     test_multiline_code()
