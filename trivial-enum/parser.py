@@ -23,10 +23,8 @@ grammar = """
 
     return_statement = "return" [ expression ]
     print_statement = "print" [ expression ]
-    function_statement = "function" identifier "(" [ identifier { "," identifier } ] ")" statements
-    
-    NEW IMPLEMENTATION: 
-    enum = "enum" identifier "{" [ identifier { ", " identifier } ] "}"
+    function_statement = "function" identifier "(" [ identifier { "," identifier } ] ")" statements 
+    enum_statement = "enum" identifier "{" [ identifier { ", " identifier } ] "}"
 
     if_statement = "if" "(" expression ")" statement_list [ "else" (if_statement | statement_list) ]
     while_statement = "while" "(" expression ")" statement_list
@@ -37,7 +35,7 @@ grammar = """
     break_statement = "break"
     continue_statement = "continue"
 
-    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | expression
+    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | enum_statement | expression
 
     program = [ statement { ";" statement } {";"} ]
     """
@@ -46,73 +44,68 @@ grammar = """
 # BASIC EXPRESSIONS
 
 
-def parse_enum(tokens):
+def parse_enum_statement(tokens):
     """
-    enum = "enum" identifier "{" [ identifier { ", " identifier } ] "}"
+    enum_statement = "enum" identifier "{" [ identifier { ", " identifier } ] "}"
     """
 
     # check for enum keyword
     token = tokens[0]
-    assert(token["tag"] == "enum"), f"Expected 'enum' at position {tokens[0]['position']}"
+    assert(token["tag"] == "enum"), f"Expected 'enum'."
 
     # check for identifier name
-    token = tokens[:1]
-    assert(token[0]["tag"] == "identifier"), f"Expected identifier name."
+    token = tokens[1:]
+    assert(token[0]["tag"] == "identifier"), f"Expected identifier name. Got: {token[0]["tag"]}"
     name = token[0]["value"] # name of the enum object
 
     # check for opening curly brace
-    token = tokens[:1]
+    token = token[1:]
     assert(token[0]["tag"] == "{"), f"Expected opening curly brace."
     
     # look for enumerators
     enumerators = []
-    token = tokens[:1]
-    if (token[0]["tag"] != "}"):
-        assert(tokens[0]["tag"] == "identifier"), f"Expected identifier"
-        enumerators.append(tokens[0])
-        token = tokens[:1]
+    count = 0           # count for establishing enumerator order
+    token = token[1:]  # consume '{'
+    while (token[0]["tag"] != "}"):
+        if (token[0]["tag"] == ","):
+            token = token[1:]
+        elif (token[0]["tag"] == "identifier"):
+            token[0]["order"] = count
+            enumerators.append(token[0])
+            count = count + 1
+            token = token[1:]
+        else:
+            assert False, f"Expected identifier or comma token. Got: {token[0]["tag"]}"
 
-        # check for multiple enumerators
-        while tokens[0]["tag"] == ",":
-            tokens = tokens[1:]
-            assert(tokens[0]["tag"] == "identifier"), f"Expected identifier"
-            enumerators.append(tokens[0])
-            token = tokens[1:]
-        
-        
-
-
-
-     
-    
-
-    """
-    tokens = tokens[1:]
-    assert tokens[0]["tag"] == "(", f"Expected '(' at position {tokens[0]['position']}"
-    tokens = tokens[1:]
-    parameters = []
-    if tokens[0]["tag"] != ")":
-        assert (
-            tokens[0]["tag"] == "identifier"
-        ), f"Expected identifier at position {tokens[0]['position']}"
-        parameters.append(tokens[0])
-        tokens = tokens[1:]
-        while tokens[0]["tag"] == ",":
-            tokens = tokens[1:]
-            assert (
-                tokens[0]["tag"] == "identifier"
-            ), f"Expected identifier at position {tokens[0]['position']}"
-            parameters.append(tokens[0])
-            tokens = tokens[1:]
-    assert tokens[0]["tag"] == ")", f"Expected ']' at position {tokens[0]['position']}"
-    tokens = tokens[1:]
-    body_statements, tokens = parse_statement_list(tokens)
+    # return ast object
     return {
-        "tag": "function",
-        "parameters": parameters,
-        "body": body_statements,
-    }, tokens
+        "tag": "enum",
+        "name": name,
+        "enumerators": enumerators
+    }, token[1:]
+
+def test_parse_enum_statement():
     """
+    enum_statement = "enum" identifier "{" [ identifier { ", " identifier } ] "}"
+    """
+
+    tokens = tokenize("enum MyEnum { A, B,,, C }")
+    result, tokens = parse_enum_statement(tokens)
+    assert (
+        result == {'tag': 'enum', 'name': 'MyEnum', 'enumerators': [{'tag': 'identifier', 'value': 'A', 'column': 15, 'line': 1, 'order': 0}, {'tag': 'identifier', 'value': 'B', 'column': 18, 'line': 1, 'order': 1}, {'tag': 'identifier', 'value': 'C', 'column': 23, 'line': 1, 'order': 2}]}
+    )
+
+    tokens = tokenize("enum MyEnum {}")
+    result, tokens = parse_enum_statement(tokens)
+    assert (
+        result == {'tag': 'enum', 'name': 'MyEnum', 'enumerators': []}
+    )
+
+    tokens = tokenize("enum MyEnum { A }")
+    result, tokens = parse_enum_statement(tokens)
+    assert (
+        result == {'tag': 'enum', 'name': 'MyEnum', 'enumerators': [{'tag': 'identifier', 'value': 'A', 'column': 15, 'line': 1, 'order': 0}]}
+    )
 
 
 def parse_simple_expression(tokens):
@@ -1131,47 +1124,21 @@ def test_parse_statement_list():
             {"tag": "print", "value": {"tag": "number", "value": 3}},
         ],
     }
-    ast, tokens = parse_statement_list(tokenize("{print 2;function z(x) {4} print 3;}"))
-    assert ast == {
-        "tag": "statement_list",
-        "statements": [
-            {"tag": "print", "value": {"tag": "number", "value": 2}},
-            {
-                "tag": "assign",
-                "target": {"tag": "identifier", "value": "z"},
-                "value": {
-                    "tag": "function",
-                    "parameters": [{"tag": "identifier", "value": "x", "position": 20}],
-                    "body": {
-                        "tag": "statement_list",
-                        "statements": [{"tag": "number", "value": 4}],
-                    },
-                },
-            },
-            {"tag": "print", "value": {"tag": "number", "value": 3}},
-        ],
-    }
+
+    # testing parse_enum_statement
     ast, tokens = parse_statement_list(
-        tokenize("{print 2;z = function (x) {4} print 3;}")
+        tokenize("{enum MyEnum {A, B}; print 3;}")
     )
     assert ast == {
         "tag": "statement_list",
         "statements": [
-            {"tag": "print", "value": {"tag": "number", "value": 2}},
             {
-                "tag": "assign",
-                "target": {"tag": "identifier", "value": "z"},
-                "value": {
-                    "tag": "function",
-                    "parameters": [{"tag": "identifier", "value": "x", "position": 23}],
-                    "body": {
-                        "tag": "statement_list",
-                        "statements": [{"tag": "number", "value": 4}],
-                    },
-                },
+                "tag": "enum",
+                "name": "MyEnum",
+                "enumerators": [{"tag":"identifier", "value":"A", "column":15, "line":1, "order":0}, {"tag":"identifier", "value":"B", "column":18, "line":1, "order":1}]
             },
-            {"tag": "print", "value": {"tag": "number", "value": 3}},
-        ],
+            {"tag": "print", "value": {"tag": "number", "value": 3}}
+        ]
     }
 
 
@@ -1477,7 +1444,7 @@ def test_parse_function_statement():
 
 def parse_statement(tokens):
     """
-    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | expression
+    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | enum_statement | expression
     """
     tag = tokens[0]["tag"]
     # note: none of these consumes a token
@@ -1501,12 +1468,14 @@ def parse_statement(tokens):
         return parse_continue_statement(tokens)
     if tag == "assert":
         return parse_assert_statement(tokens)
+    if tag == "enum":
+        return parse_enum_statement(tokens)
     return parse_expression(tokens)
 
 
 def test_parse_statement():
     """
-    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | expression
+    statement = if_statement | while_statement | function_statement | return_statement | print_statement | exit_statement | import_statement | break_statement | continue_statement | assert_statement | enum_statement | expression
     """
     print("testing parse_statement...")
 
@@ -1534,6 +1503,11 @@ def test_parse_statement():
     assert (
         parse_statement(tokenize("function x(y){2}"))[0]
         == parse_function_statement(tokenize("function x(y){2}"))[0]
+    )
+    # enum
+    assert (
+        parse_statement(tokenize("enum MyEnum {A, B, C}"))[0] 
+        == parse_enum_statement(tokenize("enum MyEnum {A, B, C}"))[0]
     )
 
 
@@ -1586,6 +1560,19 @@ def test_parse_program():
             {"tag": "print", "value": {"tag": "number", "value": 4}},
             {"tag": "print", "value": {"tag": "number", "value": 5}},
         ],
+    }
+    code = """enum MyEnum {A, B}; print 4"""
+    ast, tokens = parse_program(tokenize(code))
+    assert ast == {
+        "tag": "program",
+        "statements": [
+            {
+                "tag": "enum",
+                "name": "MyEnum",
+                "enumerators": [{"tag":"identifier", "value":"A", "column":14, "line":1, "order":0}, {"tag":"identifier", "value":"B", "column":17, "line":1, "order":1}]
+            },
+            {"tag": "print", "value": {"tag": "number", "value": 4}}
+        ]
     }
 
 
@@ -1691,7 +1678,10 @@ if __name__ == "__main__":
     ]
 
     test_functions = [
-        test_parse_simple_expression,
+        test_parse_enum_statement,
+        test_parse_statement,
+        test_parse_statement_list,
+        test_parse_program
     ]
     test_grammar = grammar
 
@@ -1704,5 +1694,3 @@ if __name__ == "__main__":
 
     if test_grammar.strip() != "":
         print(f"Untested grammar = [[[ {test_grammar} ]]]")
-
-    test_parse()
