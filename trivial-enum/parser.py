@@ -629,6 +629,14 @@ def test_parse_complex_expression():
         },
         "index": {"tag": "number", "value": 3},
     }
+
+    ast, tokens = parse_complex_expression(tokenize("MyEnum.A"))
+    assert ast == {
+        "tag": "complex",
+        "base": {"tag": "identifier", "value": "MyEnum"},
+        "index": {"tag": "string", "value": "A"},
+    }
+
     ast, tokens = parse_complex_expression(tokenize("x.abc"))
     assert ast == {
         "tag": "complex",
@@ -1572,6 +1580,23 @@ def test_parse_program():
                 "enumerators": [{"tag":"identifier", "value":"A", "column":14, "line":1, "order":0}, {"tag":"identifier", "value":"B", "column":17, "line":1, "order":1}]
             },
             {"tag": "print", "value": {"tag": "number", "value": 4}}
+        ]
+    }
+    code = """enum MyEnum {A, B}; enum MyEnum2 {C, D};"""
+    ast, tokens = parse_program(tokenize(code))
+    assert ast == {
+        "tag": "program",
+        "statements": [
+            {
+                "tag": "enum",
+                "name": "MyEnum",
+                "enumerators": [{"tag":"identifier", "value":"A", "column":14, "line":1, "order":0}, {"tag":"identifier", "value":"B", "column":17, "line":1, "order":1}]
+            },
+            {
+                "tag": "enum",
+                "name": "MyEnum2",
+                "enumerators": [{"tag":"identifier", "value":"C", "column":35, "line":1, "order":0}, {"tag":"identifier", "value":"D", "column":38, "line":1, "order":1}]
+            }
         ]
     }
 
