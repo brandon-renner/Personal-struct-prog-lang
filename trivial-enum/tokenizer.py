@@ -283,7 +283,7 @@ def test_keywords():
         assert t[0]["tag"] == keyword, f"expected {keyword}, got {t[0]}"
         assert "value" not in t
 
-def test_enum():
+def test_tokenize_enum_statement():
     print("testing enum keyword...")
     t = tokenize("enum MyEnum { A, B, C }")
     assert len(t) == 10, f"got tokens = {t}"
@@ -567,7 +567,7 @@ if __name__ == "__main__":
     test_comments()
     test_error()
     test_if_identifier_sequence()
-    test_enum()
+    test_tokenize_enum_statement()
     test_tag_coverage()
     test_line_and_column_tracking()
     test_multiline_code()

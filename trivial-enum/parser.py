@@ -92,7 +92,14 @@ def test_parse_enum_statement():
     tokens = tokenize("enum MyEnum { A, B,,, C }")
     result, tokens = parse_enum_statement(tokens)
     assert (
-        result == {'tag': 'enum', 'name': 'MyEnum', 'enumerators': [{'tag': 'identifier', 'value': 'A', 'column': 15, 'line': 1, 'order': 0}, {'tag': 'identifier', 'value': 'B', 'column': 18, 'line': 1, 'order': 1}, {'tag': 'identifier', 'value': 'C', 'column': 23, 'line': 1, 'order': 2}]}
+        result == {'tag': 'enum', 
+                   'name': 'MyEnum', 
+                   'enumerators': [
+                       {'tag': 'identifier', 'value': 'A', 'column': 15, 'line': 1, 'order': 0}, 
+                       {'tag': 'identifier', 'value': 'B', 'column': 18, 'line': 1, 'order': 1}, 
+                       {'tag': 'identifier', 'value': 'C', 'column': 23, 'line': 1, 'order': 2}
+                       ]
+                    }
     )
 
     tokens = tokenize("enum MyEnum {}")
