@@ -1223,7 +1223,22 @@ def test_control_flow_scoping_rules():
     except Exception as e:
         assert "'break' statement outside of loop" in str(e)
 
+def test_evaluate_enum_statement():
+    print("test evaluate enum statement")
 
+    code = "x=MyEnum.C"
+    env = {"MyEnum": {"A": 0, "B": 1, "C": 2}}
+    result, _ = evaluate(parse(tokenize(code)), env)
+    print(env)
+    assert env['x'] == 2, f"Expected evaluation to be x == 2, got x == {env['x']}"
+
+    code = "enum MyEnum {A, B, C}; x=MyEnum.B"
+    env = {}
+    result, _ = evaluate(parse(tokenize(code)), env)
+    print(env)
+    assert env['MyEnum'] == {"A": 0, "B": 1, "C": 2}, f"Expected MyEnum to be {{'A': 0, 'B': 1, 'C': 2}}, got {env['MyEnum']}"
+    assert env['x'] == 1, f"Expected evaluation to be x == 1, got x == {env['x']}"
+    
 if __name__ == "__main__":
     # statements and programs are tested implicitly
     test_evaluate_single_value()
@@ -1248,4 +1263,5 @@ if __name__ == "__main__":
     test_scoping()
     test_closures()
     test_control_flow_scoping_rules()
+    test_evaluate_enum_statement()
     print("done.")
