@@ -247,6 +247,18 @@ def evaluate(ast, environment):
             object[key] = value
         return object, None
 
+    if ast["tag"] == "enum":
+        enum_name = ast["name"]
+        enum_object = {}
+        for item in ast["enumerators"]:
+            assert item["tag"] == "identifier", "Enum items must be identifiers"
+            name = item["value"]
+            if name in enum_object:
+                raise Exception(f"Duplicate enum item: '{name}'")
+            enum_object[name] = item["order"]  # Enum value is the same as its name
+        environment[enum_name] = enum_object
+        return enum_object, None
+
     if ast["tag"] == "identifier":
         identifier = ast["value"]
         if identifier in environment:
@@ -1238,6 +1250,11 @@ def test_evaluate_enum_statement():
     print(env)
     assert env['MyEnum'] == {"A": 0, "B": 1, "C": 2}, f"Expected MyEnum to be {{'A': 0, 'B': 1, 'C': 2}}, got {env['MyEnum']}"
     assert env['x'] == 1, f"Expected evaluation to be x == 1, got x == {env['x']}"
+
+    code = "enum MyEnum {A, B, C}; x=MyEnum.B; print(MyEnum.C); print(x)"
+    env = {}
+    result, _ = evaluate(parse(tokenize(code)), env)
+    print(env)
     
 if __name__ == "__main__":
     # statements and programs are tested implicitly
