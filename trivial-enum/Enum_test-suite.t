@@ -1,5 +1,7 @@
 // Testing Enum Functionality - Basic enum definition, access, and printing
 
+print("Testing basic enum value functionality");
+
 enum MyEnum {A, B, C};
 
 x = MyEnum.A;
@@ -9,22 +11,26 @@ print(MyEnum.C);
 
 // Testing Enum Functionality - Truth-y nature of order values 
 
+print("Testing truthiness of enum values");
+
 enum boolEnum {False, True};
 print(" ");
 
 if(boolEnum.True) {
-    print("This should print");
+    print("This should print"); // Enum value of second index should be 1, which is truthy
 } else {
     print("This should not print");
 }
 
 if(boolEnum.False) {
-    print("This should not print");
+    print("This should not print"); 
 } else {
-    print("This should print");
+    print("This should print"); // Enum value of first index should be 0, which is not truthy
 }
 
 // Testing Enum Functionality - Comparison of enum values
+
+print("Testing equality comparison of enum values");
 
 enum MyEnum2 {X, Y, Z};
 print(" ");
@@ -43,6 +49,8 @@ if (MyEnum2.X == MyEnum2.Y) {
 
 // Testing Enum Functionality - Less than and greater than comparisons of enum values
 
+print("Testing less than and greater than comparisons of enum values");
+
 enum MyEnum3 {First, Second, Third};
 print(" ");
 
@@ -60,6 +68,8 @@ if (MyEnum3.Third > MyEnum3.Second) {
 
 // Testing Enum Functionality - Passing into functions
 
+print("Testing passing enums in functions as parameters");
+
 enum State {Stopped, Running, Paused};
 
 function statePrint(state) {
@@ -71,6 +81,23 @@ print(" ");
 statePrint(State.Stopped);
 statePrint(State.Running);
 statePrint(State.Paused);
+
+function stateCheck(state) {
+    if (state == State.Running) {
+        print("The system is running");
+    } else if (state == State.Paused) {
+        print("The system is paused");
+    } else {
+        print("The system is stopped");
+    }
+}
+
+print(" ");
+function testStateCheck() {
+    stateCheck(State.Stopped);
+    stateCheck(State.Running);
+    stateCheck(State.Paused);
+}
 
 // Testing Enum Functionality - Scopes
 
@@ -128,3 +155,6 @@ if (EnumA.A1 < EnumB.B1) {
 } else {
     print("EnumA.A1 is not less than EnumB.B1"); // expected output
 }
+
+print(" ");
+print("All Enum tests completed.");
